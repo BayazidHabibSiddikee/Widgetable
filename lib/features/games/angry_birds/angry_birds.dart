@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:widgetboard/core/services/score_service.dart';
 import 'package:widgetboard/core/services/websocket_service.dart';
 
-/// 2-player "Angry Birds lite". One player builds a structure wall; the other
-/// flings birds to destroy it. Taps over the wall send `destroy` actions which
-/// propagate via WebSocket, removing bricks on the builder's side.
+/// 2-player Angry-Birds lite: builder constructs a brick wall; attacker taps
+/// to destroy bricks. Destroying more bricks = higher score.
 class AngryBirds extends StatefulWidget {
   const AngryBirds({super.key});
   @override
@@ -12,55 +12,65 @@ class AngryBirds extends StatefulWidget {
 }
 
 class _AngryBirdsState extends State<AngryBirds> {
-  static const _room = 'angry-room';
-  static const int _wallCols = 6;
-  static const int _wallRows = 8;
-  final List<bool> _bricks = List.filled(_wallCols * _wallRows, true);
+  static const room = 'angry-room';
+  static const int _cols = 6;
+  static const int _rows = 8;
+  final List<bool> _bricks = List.filled(_cols * _rows, true);
+  int _hits = 0;
 
   void _destroyAt(int idx) {
-    setState(() => _bricks[idx] = false);
-    context.read<WebSocketService>().gameAction(_room, {
-      'action': 'destroy',
-      'idx': idx,
+    if (!_bricks[idx]) return;
+    setState(() {
+      _bricks[idx] = false;
+      _hits++;
     });
+    context.read<ScoreService>().submitScore('Angry Birds', 'attacker', _hits);
+    context.read<WebSocketService>().gameAction(room, {'action': 'destroy', 'idx': idx});
   }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<WebSocketService>().joinRoom(_room, 'builder');
+      context.read<WebSocketService>().joinRoom(room, 'builder');
     });
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Angry Birds (2P)')),
+        appBar: AppBar(
+          title: const Text('Angry Birds (2P)'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Center(child: Text('Hits: $_hits', style: Theme.of(context).textTheme.titleMedium)),
+            )
+          ],
+        ),
         body: Column(children: [
-          const SizedBox(height: 16),
-          TextButton.icon(onPressed: () {
-            // Simulate a bird hit — the "attacker" would send this via WS.
-          }, icon: const Icon(Icons.sports_football), label: const Text('Throw bird (tap wall below)')),
+          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.sports_football), label: const Text('Tap bricks to destroy')),
           const SizedBox(height: 8),
           Expanded(
             child: GridView.builder(
               padding: const EdgeInsets.all(8),
               itemCount: _bricks.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: _wallCols),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: _cols),
               itemBuilder: (_, i) => _bricks[i]
                   ? GestureDetector(
                       onTap: () => _destroyAt(i),
                       child: Container(
                         decoration: BoxDecoration(
-                            color: Colors.brown.shade700,
-                            border: Border.all(color: Colors.black26)),
+                          color: Colors.brown.shade700,
+                          border: Border.all(color: Colors.black26),
+                        ),
                       ),
                     )
                   : const SizedBox.shrink(),
             ),
           ),
+          const SizedBox(height: 8),
+          const Text('Destroy bricks — each destroyed brick earns you a point.'),
           const SizedBox(height: 16),
-          const Text('Destroy bricks by tapping. Each brick destroyed lowers the wall.'),
         ]),
       );
 }

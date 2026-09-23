@@ -1,30 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:widgetboard/core/services/score_service.dart';
+import 'package:widgetboard/core/services/websocket_service.dart';
 
-/// Ludo placeholder — full Ludo board game implementation is substantial
-/// (4-player tokens, dice, path traversal, cut-throat capture logic).
-/// This renders an interactive board grid where each player has 4 tokens
-/// and you can tap to roll a dice (auto-animation only). Real multiplayer
-/// should extend WebSocketService.gameAction('ludo_move', ...).
+/// Ludo placeholder — board grid, dice roll animation, score counter.
+/// Multiplayer requires WebSocketService.gameAction('ludo_place', ...).
 class LudoGame extends StatefulWidget {
   const LudoGame({super.key});
   @override
   State<LudoGame> createState() => _LudoGameState();
 }
 
-class _LudoGameState extends State<LudoGame> with SingleTickerProviderStateMixin {
+class _LudoGameState extends State<LudoGame>
+    with SingleTickerProviderStateMixin {
+  static const room = 'ludo-room';
   late final AnimationController _diceCtrl;
   late final Animation<double> _diceRoll;
   int _dice = 1;
+  int _rounds = 0;
+  bool get _canRoll => !_diceCtrl.isAnimating;
 
   @override
   void initState() {
     super.initState();
-    _diceCtrl = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    _diceCtrl =
+        AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     _diceRoll = CurvedAnimation(parent: _diceCtrl, curve: Curves.bounceOut);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<WebSocketService>().joinRoom(room, 'player');
+    });
   }
 
   void _roll() {
-    setState(() => _dice = 1 + (3 * _diceRoll.value).toInt() % 6);
+    if (!_canRoll) return;
+    setState(() {
+      _rounds++;
+      _dice = 1 + ((_rounds * 7) % 6);
+    });
+    context
+        .read<ScoreService>()
+        .submitScore('Ludo', 'player', _rounds * _dice);
     _diceCtrl.forward(from: 0);
   }
 
@@ -38,14 +53,25 @@ class _LudoGameState extends State<LudoGame> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Ludo (WIP)')),
+        appBar: AppBar(
+          title: const Text('Ludo (WIP)'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                  child: Text('Rounds: $_rounds',
+                      style: Theme.of(context).textTheme.titleMedium)),
+            )
+          ],
+        ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: _roll,
+          onPressed: _canRoll ? _roll : null,
+          icon: const Icon(Icons.casino_outlined),
           label: AnimatedBuilder(
             animation: _diceRoll,
-            builder: (_, child) => Transform.scale(scale: 1 + _diceRoll.value * 0.3, child: child),
+            builder: (_, child) =>
+                Transform.scale(scale: 1 + _diceRoll.value * 0.3, child: child),
           ),
-          icon: const Icon(Icons.casino_outlined),
         ),
         body: Center(
           child: Padding(
@@ -59,12 +85,10 @@ class _LudoGameState extends State<LudoGame> with SingleTickerProviderStateMixin
                   border: Border.all(color: Colors.brown, width: 6),
                 ),
                 child: Stack(children: [
-                  // 4 colored base corners
-                  Positioned(top: 0, left: 0, child: _playerBase(0)),
-                  Positioned(top: 0, right: 0, child: _playerBase(1)),
-                  Positioned(bottom: 0, left: 0, child: _playerBase(2)),
-                  Positioned(bottom: 0, right: 0, child: _playerBase(3)),
-                  // dice
+                  for (var i = 0; i < 4; i++) Positioned(top: 0, left: 0, child: _playerBase(i)),
+                  for (var i = 0; i < 2; i++) Positioned(top: 0, right: 0, child: _playerBase(i + 2)),
+                  for (var i = 0; i < 2; i++) Positioned(bottom: 0, left: 0, child: _playerBase(i)),
+                  for (var i = 0; i < 2; i++) Positioned(bottom: 0, right: 0, child: _playerBase(i + 2)),
                   Center(
                     child: Card(
                       elevation: 6,
@@ -76,7 +100,7 @@ class _LudoGameState extends State<LudoGame> with SingleTickerProviderStateMixin
                               style: TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.bold,
-                                color: playerColors[_dice.clamp(0, 3)],
+                                color: playerColors[(_dice - 1).clamp(0, 3)],
                               )),
                         ]),
                       ),
@@ -90,17 +114,21 @@ class _LudoGameState extends State<LudoGame> with SingleTickerProviderStateMixin
       );
 
   Widget _playerBase(int idx) => Container(
-        width: 80,
-        height: 80,
+        width: 90,
+        height: 90,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: playerColors[idx].withOpacity(0.25),
           border: Border.all(color: playerColors[idx], width: 3),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(4, (_) => Icon(Icons.circle, size: 12, color: playerColors[idx])),
+        child: Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: List.generate(
+            4,
+            (_) => Icon(Icons.circle, size: 12, color: playerColors[idx]),
+          ),
         ),
       );
 }

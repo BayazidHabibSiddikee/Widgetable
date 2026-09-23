@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:widgetboard/core/services/score_service.dart';
 import 'package:widgetboard/features/chat/chat_page.dart';
 import 'package:widgetboard/features/games/games_home.dart';
 import 'package:widgetboard/features/media/media_page.dart';
@@ -22,9 +24,55 @@ class _HomePageState extends State<HomePage> {
 
   void _setPage(int i) => setState(() => _index = i);
 
+  void _showLeaderboard() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Consumer<ScoreService>(builder: (_, svc, __) {
+        final allScores = svc.scores.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+        if (allScores.isEmpty) {
+          return const SizedBox(
+            height: 160,
+            child: Center(child: Text('No high scores yet. Play a game!')),
+          );
+        }
+        return SizedBox(
+          height: 320,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const SizedBox(height: 12),
+            const Center(child: Text('Leaderboard', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.separated(
+                itemCount: allScores.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final e = allScores[i];
+                  final parts = e.key.split(':');
+                  return ListTile(
+                    leading: CircleAvatar(child: Text('${i + 1}')),
+                    title: Text(parts[1]),
+                    subtitle: Text(parts[0]),
+                    trailing: Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  );
+                },
+              ),
+            ),
+          ]),
+        );
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         body: _pages[_index],
+        floatingActionButton: _index == 1
+            ? FloatingActionButton.small(
+                onPressed: _showLeaderboard,
+                tooltip: 'Leaderboard',
+                child: const Icon(Icons.emoji_events),
+              )
+            : null,
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
           onDestinationSelected: _setPage,

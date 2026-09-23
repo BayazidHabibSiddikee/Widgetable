@@ -7,6 +7,13 @@ import 'package:widgetboard/features/games/truth_dare/truth_dare.dart';
 import 'package:widgetboard/features/games/builder/builder_game.dart';
 import 'package:widgetboard/features/games/angry_birds/angry_birds.dart';
 
+class _GameEntry {
+  _GameEntry({required this.name, required this.icon, required this.page});
+  final String name;
+  final IconData icon;
+  final Widget page;
+}
+
 class GamesHome extends StatelessWidget {
   const GamesHome({super.key});
 
@@ -21,41 +28,46 @@ class GamesHome extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Games')),
-        body: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.9,
-          ),
-          itemCount: _games.length,
-          itemBuilder: (_, i) {
-            final g = _games[i];
-            return Card.filled(
-              elevation: 2,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => g.page)),
-                child: Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(g.icon, size: 36, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 6),
-                    Text(g.name, style: const TextStyle(fontSize: 12)),
-                  ]),
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Games')),
+      body: LayoutBuilder(
+        builder: (_, constraints) {
+          final cols = (constraints.maxWidth / 140).floor().clamp(2, 4);
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.9,
+            ),
+            itemCount: _games.length,
+            itemBuilder: (_, i) {
+              final g = _games[i];
+              return Card.filled(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => g.page),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(g.icon, size: 38, color: cs.primary),
+                        const SizedBox(height: 6),
+                        Text(g.name, style: const TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
-      );
-}
-
-class _GameEntry {
-  _GameEntry({required this.name, required this.icon, required this.page});
-  final String name;
-  final IconData icon;
-  final Widget page;
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:widgetboard/core/services/score_service.dart';
 import 'package:widgetboard/core/services/websocket_service.dart';
 
-/// Collaborative building game. Players take turns placing 2×2 colored
-/// blocks on a shared grid; the goal is to build the tallest structure that
-/// doesn't collapse. Blocks fall if nothing supports them (simplified gravity).
+/// Collaborative building game on an 8×12 grid. Place 2×2 colored blocks
+/// to maximize stable height. Scores increase with each supported placement.
 class BuilderGame extends StatefulWidget {
   const BuilderGame({super.key});
   @override
@@ -12,55 +12,49 @@ class BuilderGame extends StatefulWidget {
 }
 
 class _BuilderGameState extends State<BuilderGame> {
-  static const _room = 'builder-room';
+  static const room = 'builder-room';
   static const _cols = 8;
   static const _rows = 12;
   final List<Color?> _grid = List.filled(_cols * _rows, null);
   int _score = 0;
 
   void _place(int col) {
-    // find topmost empty cell in column
-    final topIdx = col + (_rows - 1) * _cols;
     for (var r = _rows - 1; r >= 0; r--) {
       final idx = col + r * _cols;
-      if (_grid[idx] == null) {
+      if (_grid[idx] == null && col + 1 < _cols && _grid[idx + 1] == null) {
         final color = Colors.primaries[_score % Colors.primaries.length];
         setState(() {
-          for (var i = 0; i < 2; i++) {
-            final c = (col + i).clamp(0, _cols - 1);
-            _grid[idx - i * _cols] = color;
-          }
+          _grid[idx] = color;
+          _grid[idx + 1] = color;
           _score++;
         });
-        context.read<WebSocketService>().gameAction(_room, {
-          'action': 'place',
-          'col': col,
-          'color': color.value,
-        });
-        _checkCollapse();
+        context.read<ScoreService>().submitScore('Builder', 'player', _score);
+        context.read<WebSocketService>().gameAction(room, {'action': 'place', 'col': col, 'color': color.value});
         return;
       }
     }
   }
 
-  void _checkCollapse() {
-    // Simplified: collapse any isolated floating 2x2 group above empty space
-    // (full physics would require Union-Find connectivity.)
-  }
-
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Builder'), actions: [Center(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('Score: $_score')))]),
-        body: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        appBar: AppBar(
+          title: const Text('Builder'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Center(child: Text('Score: $_score', style: Theme.of(context).textTheme.titleMedium)),
+            )
+          ],
+        ),
+        body: Column(children: [
           Expanded(
             child: AspectRatio(
               aspectRatio: _cols / _rows,
               child: GridView.builder(
-                itemCount: _grid.length,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: _cols,
-                ),
+                padding: const EdgeInsets.all(4),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: _cols),
+                itemCount: _grid.length,
                 itemBuilder: (_, i) => Container(
                   decoration: BoxDecoration(
                     color: _grid[i],
@@ -70,8 +64,13 @@ class _BuilderGameState extends State<BuilderGame> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Wrap(spacing: 8, children: List.generate(_cols, (i) => FilledButton(onPressed: () => _place(i), child: Text('Col $i')))),
+          Wrap(
+            spacing: 4,
+            children: List.generate(
+              _cols,
+              (i) => FilledButton(onPressed: () => _place(i), child: Text('C$i')),
+            ),
+          ),
           const SizedBox(height: 16),
         ]),
       );
