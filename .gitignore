@@ -1,0 +1,24 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+packages/
+pub-cache/
+.pub-cache/
+*..lock
+flutter_export_environment.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.a
+*.o
+*.so
+
+# Build output
+build/
+android/app/build/
+
+# Generated
+lib/*_generated.dart
