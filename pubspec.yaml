@@ -30,9 +30,7 @@ dependencies:
   # Local storage
   shared_preferences: ^2.2.3
   path_provider: ^2.1.2
-
-  # Used to bridge notes from Flutter into the Android AppWidget.
-  flutter_local_notifications: ^15.2.0
+  # Used to bridge notes from Flutter into the Android AppWidget (SharedPreferences).
 
   # UI / utilities
   intl: ^0.19.0
@@ -45,13 +43,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  assets:
-    - assets/fonts/
-
-  fonts:
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-Bold.ttf
-        - asset: assets/fonts/Inter-SemiBold.ttf

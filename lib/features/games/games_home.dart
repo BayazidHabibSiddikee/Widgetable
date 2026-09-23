@@ -32,7 +32,7 @@ class GamesHome extends StatelessWidget {
             childAspectRatio: 0.9,
           ),
           itemCount: _games.length,
-          itemDelegate: (_, i) {
+          itemBuilder: (_, i) {
             final g = _games[i];
             return Card.filled(
               elevation: 2,

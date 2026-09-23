@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
         body: _pages[_index],
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
-          onDestinationChanged: _setPage,
+          onDestinationSelected: _setPage,
           destinations: const [
             NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Chats'),
             NavigationDestination(icon: Icon(Icons.gamepad_outlined), label: 'Games'),

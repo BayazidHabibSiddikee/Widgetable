@@ -28,7 +28,7 @@ class _TtcGameState extends State<TtcGame> {
     });
     final win = _checkWin(_cells);
     if (win != null) _showEnd('$win wins!');
-    if (!win && !_cells.contains(Player.none)) _showEnd('Draw!');
+    if (win == null && !_cells.contains(Player.none)) _showEnd('Draw!');
     _current = _current == Player.x ? Player.o : Player.x;
   }
 
@@ -64,7 +64,7 @@ class _TtcGameState extends State<TtcGame> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameStream((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<WebSocketService>().joinRoom(_room, 'player');
     });
   }
@@ -80,7 +80,7 @@ class _TtcGameState extends State<TtcGame> {
             childAspectRatio: 1,
           ),
           itemCount: 9,
-          itemDelegate: (_, i) => GestureDetector(
+          itemBuilder: (_, i) => GestureDetector(
             onTap: () => _tap(i),
             child: Card(
               elevation: 3,
@@ -88,7 +88,7 @@ class _TtcGameState extends State<TtcGame> {
                 child: Icon(
                   switch (_cells[i]) {
                     Player.x => Icons.close,
-                    Player.o => Icons.circle_badge_outlined,
+                    Player.o => Icons.circle,
                     Player.none => null,
                   },
                   size: 42,

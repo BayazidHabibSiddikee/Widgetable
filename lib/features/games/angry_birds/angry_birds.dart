@@ -28,7 +28,7 @@ class _AngryBirdsState extends State<AngryBirds> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameStream((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<WebSocketService>().joinRoom(_room, 'builder');
     });
   }

@@ -13,8 +13,6 @@ class RacingGame extends StatefulWidget {
 class _RacingGameState extends State<RacingGame> with SingleTickerProviderStateMixin {
   static const _room = 'racing-room';
   static const double _laneWidth = 60;
-  static const double _playerW = 50;
-
   double _playerX = 0; // -1 (left) to 1 (right)
   final List<Offset> _obstacles = [];
   late Timer _timer;
@@ -26,10 +24,10 @@ class _RacingGameState extends State<RacingGame> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController.unbounded(this)..repeat(reverse: true, period: const Duration(seconds: 1));
+    _ctrl = AnimationController.unbounded(vsync: this)..repeat(reverse: true, period: const Duration(seconds: 1));
     _bg = CurvedAnimation(parent: _ctrl, curve: Curves.linear);
     _timer = Timer.periodic(const Duration(milliseconds: 60), _tick);
-    WidgetsBinding.instance.addPostFrameStream((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<WebSocketService>().joinRoom(_room, 'racer');
     });
   }

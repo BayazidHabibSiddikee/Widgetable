@@ -99,7 +99,7 @@ class _ChatsPageState extends State<ChatsPage> {
                                 imageUrl: m.mediaUrl ?? '',
                                 width: 160,
                                 placeholder: (_, __) =>
-                                    const SizedBox(16, 16, child: CircularProgressIndicator()),
+                                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator()),
                                 errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
                               ),
                             )
