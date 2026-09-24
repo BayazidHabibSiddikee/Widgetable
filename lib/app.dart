@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:widgetboard/core/theme.dart';
-import 'package:widgetboard/features/home/home_page.dart';
+import 'package:widgetboard/features/server_config/server_config_page.dart';
 
 class WidgetBoardApp extends StatelessWidget {
   const WidgetBoardApp({super.key});
@@ -12,6 +12,6 @@ class WidgetBoardApp extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
-        home: const HomePage(),
+        home: const ServerConfigPage(),
       );
 }

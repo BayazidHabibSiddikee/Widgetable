@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:widgetboard/core/services/score_service.dart';
 import 'package:widgetboard/features/chat/chat_page.dart';
+import 'package:widgetboard/features/friends/friends_page.dart';
 import 'package:widgetboard/features/games/games_home.dart';
 import 'package:widgetboard/features/media/media_page.dart';
+import 'package:widgetboard/features/widget_add/add_widget_page.dart';
 import 'package:widgetboard/features/widget_write/widget_write_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -19,7 +21,7 @@ class _HomePageState extends State<HomePage> {
     ChatsPage(),
     GamesHome(),
     MediaPage(),
-    WidgetWritePage(),
+    AddWidgetPage(),
   ];
 
   void _setPage(int i) => setState(() => _index = i);
@@ -63,6 +65,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _openFriends() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FriendsPage()));
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         body: _pages[_index],
@@ -72,7 +78,13 @@ class _HomePageState extends State<HomePage> {
                 tooltip: 'Leaderboard',
                 child: const Icon(Icons.emoji_events),
               )
-            : null,
+            : _index == 0
+                ? FloatingActionButton.small(
+                    onPressed: _openFriends,
+                    tooltip: 'Friends',
+                    child: const Icon(Icons.person_add),
+                  )
+                : null,
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
           onDestinationSelected: _setPage,
