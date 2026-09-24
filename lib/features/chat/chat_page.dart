@@ -110,6 +110,7 @@ class _ChatsPageState extends State<ChatsPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final ws = context.watch<WebSocketService>();
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -120,13 +121,37 @@ class _ChatsPageState extends State<ChatsPage> {
             Icon(
               Icons.circle,
               size: 10,
-              color: _connected ? Colors.green : Colors.red,
+              color: ws.isOfflineMode ? Colors.orange : (ws.isConnected ? Colors.green : Colors.red),
             ),
+            if (ws.isOfflineMode) ...[
+              const SizedBox(width: 4),
+              const Text('Offline', style: TextStyle(fontSize: 11, color: Colors.orange)),
+            ] else if (!ws.isConnected) ...[
+              const SizedBox(width: 4),
+              const Text('Disconnected', style: TextStyle(fontSize: 11, color: Colors.red)),
+            ],
           ],
         ),
         centerTitle: false,
       ),
       body: Column(children: [
+         if (!ws.isConnected && !ws.isOfflineMode)
+           Container(
+             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+             color: cs.errorContainer,
+             child: Text(
+               'Not connected to server — messages will be queued and sent when reconnected.',
+               style: TextStyle(color: cs.onErrorContainer),
+             ),
+           ),
+         if (ws.isOfflineMode)
+           Container(
+             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+             color: cs.secondaryContainer,
+             child: Text(
+               'Offline mode — widget notes work locally. Connect to a server for chat & games.',
+             ),
+           ),
         Expanded(
           child: _messages.isEmpty
               ? Center(

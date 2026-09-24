@@ -39,7 +39,6 @@ dependencies:
   # UI / utilities
   intl: ^0.20.3
   uuid: ^4.4.2
-  clipboard: ^3.0.14
 
 dev_dependencies:
   flutter_test:

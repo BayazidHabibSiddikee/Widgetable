@@ -7,32 +7,21 @@ import 'package:widgetboard/core/models/note_entry.dart';
 
 /// WebSocket / Socket.IO signaling service for WidgetBoard.
 ///
-/// Emits (client → server):
-///   - `register`            { username }
-///   - `search_users`        { query }
-///   - `add_friend`          { to_username }
-///   - `create_room`         { game, friend }   → emits `room_created` { room }
-///   - `join_room`           { room, username }
-///   - `leave_room`          { room }
-///   - `message`             { room, text, media_url }
-///   - `game_action`         { room, ...payload }
-///   - `widget_write`        { to_userId, body }
-///
-/// Listens (server → client):
-///   - `search_results`     List<dynamic>  (matched users)
-///   - `friend_request`     { from }
-///   - `room_created`       { room, game, friend }
-///   - `room_joined`        { room }
-///   - `user_joined`        { username }
-///   - `incoming_message`   { room, text, media_url, sender }
-///   - `widget_write`       { from, body }
+/// Supports both **online** (server-connected) and **offline** modes:
+/// - In offline mode, all outgoing events (messages, notes, game actions) are
+///   buffered to SharedPreferences and replayed once the server reconnects.
+/// - The widget reads directly from SharedPreferences, so it always works offline.
 class WebSocketService with ChangeNotifier {
-  late final socket_io.Socket _socket;
+  socket_io.Socket? _socket;
   String _username = 'guest';
+  bool _isOnline = false;
 
   String get username => _username;
-  bool get isConnected => _socket.connected;
+  bool get isConnected => _isOnline;
   String? currentRoom;
+
+  /// Whether the user is running in pure-offline mode (no server configured).
+  bool isOfflineMode = false;
 
   /// Stream of inbound real-time events.
   final _events = StreamController<Map<String, dynamic>>.broadcast();
@@ -50,29 +39,42 @@ class WebSocketService with ChangeNotifier {
   final _rooms = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onRoom => _rooms.stream;
 
-  Future<void> connect(String? serverUrl) async {
+  Future<void> connect(String serverUrl) async {
+    if (_socket != null) {
+      try {
+        _socket!.dispose();
+      } catch (_) {}
+    }
     _socket = socket_io.io(
-      serverUrl ?? 'http://localhost:3000',
+      serverUrl,
       socket_io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .build(),
     );
-    _socket.connect();
-    _socket.on('connect', (_) => notifyListeners());
-    _socket.on('disconnect', (_) => notifyListeners());
+    _isOnline = false;
+    _socket!.connect();
+    _socket!.on('connect', (_) {
+      _isOnline = true;
+      _flushPending();
+      notifyListeners();
+    });
+    _socket!.on('disconnect', (_) {
+      _isOnline = false;
+      notifyListeners();
+    });
     _registerSocketHandlers();
   }
 
   void _registerSocketHandlers() {
-    _socket.on('search_results', _handleSearchResults);
-    _socket.on('friend_request', _forward);
-    _socket.on('room_created', _handleRoomCreated);
-    _socket.on('room_joined', _forward);
-    _socket.on('user_joined', _forward);
-    _socket.on('incoming_message', _forward);
-    _socket.on('widget_write', _onWidgetWrite);
-    _socket.on('friends_list', (data) {
+    _socket!.on('search_results', _handleSearchResults);
+    _socket!.on('friend_request', _forward);
+    _socket!.on('room_created', _handleRoomCreated);
+    _socket!.on('room_joined', _forward);
+    _socket!.on('user_joined', _forward);
+    _socket!.on('incoming_message', _forward);
+    _socket!.on('widget_write', _onWidgetWrite);
+    _socket!.on('friends_list', (data) {
       if (data is List) {
         _friends.clear();
         _friends.addAll(data.cast<String>());
@@ -95,33 +97,57 @@ class WebSocketService with ChangeNotifier {
     _events.add(m);
   }
 
-  /// When we receive a widget_write, append it to our local shared prefs so
-  /// the Android AppWidget can display it immediately.
   Future<void> _onWidgetWrite(dynamic data) async {
     final map = data as Map<String, dynamic>;
     final sender = map['from'] as String? ?? 'friend';
     final body = map['body'] as String? ?? '';
     if (body.isEmpty) return;
+    await _appendReceivedNote(sender, body);
+  }
 
+  /// Append an incoming note to SharedPreferences (works both online and offline).
+  Future<void> _appendReceivedNote(String sender, String body) async {
     final entry = NoteEntry(
       sender: sender,
       body: body,
       timestamp: DateTime.now(),
     );
-
     final prefs = await SharedPreferences.getInstance();
-    // Load existing received notes
     final raw = prefs.getString('widget_notes_json') ?? '[]';
     final existing = NoteEntry.fromJsonList(raw);
-    // Prepend newest
     existing.insert(0, entry);
     if (existing.length > 10) existing.removeLast();
     await prefs.setString('widget_notes_json', NoteEntry.toJsonList(existing));
-    await prefs.setString(
-      'last_note_ts',
-      _formatTs(entry.timestamp),
-    );
+    await prefs.setString('last_note_ts', _formatTs(entry.timestamp));
     notifyListeners();
+  }
+
+  /// Flush queued offline messages/notes to the server once connected.
+  Future<void> _flushPending() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Flush pending messages
+    final rawMsgs = prefs.getStringList('pending_messages') ?? [];
+    for (final raw in rawMsgs) {
+      try {
+        final msg = jsonDecode(raw) as Map<String, dynamic>;
+        sendMessage(msg['room'] as String, msg['text'] as String,
+            mediaUrl: msg['media_url'] as String?);
+      } catch (_) {}
+    }
+    if (rawMsgs.isNotEmpty) {
+      await prefs.remove('pending_messages');
+    }
+    // Flush pending widget notes
+    final rawNotes = prefs.getStringList('pending_notes') ?? [];
+    for (final raw in rawNotes) {
+      try {
+        final note = jsonDecode(raw) as Map<String, dynamic>;
+        sendWidgetNote(note['to'] as String, note['body'] as String);
+      } catch (_) {}
+    }
+    if (rawNotes.isNotEmpty) {
+      await prefs.remove('pending_notes');
+    }
   }
 
   static String _formatTs(DateTime dt) {
@@ -134,52 +160,87 @@ class WebSocketService with ChangeNotifier {
 
   void setUsername(String name) {
     _username = name;
-    _socket.emit('register', {'username': name});
+    if (!isOfflineMode && _socket != null && _socket!.connected) {
+      _socket!.emit('register', {'username': name});
+    }
   }
 
-  void searchUsers(String query) => _socket.emit('search_users', {'query': query});
+  void searchUsers(String query) => _socket!.emit('search_users', {'query': query});
 
   void addFriend(String friendUsername) =>
-      _socket.emit('add_friend', {'to_username': friendUsername});
+      _socket!.emit('add_friend', {'to_username': friendUsername});
 
-  /// Ask server to create (or find) a room for a given game + 2 players.
   Future<void> createOrJoinRoom(String gameId, String friendUsername) async {
-    _socket.emit('create_room', {'game': gameId, 'friend': friendUsername});
+    _socket!.emit('create_room', {'game': gameId, 'friend': friendUsername});
   }
 
   void joinRoom(String roomId, String username) {
     currentRoom = roomId;
-    _socket.emit('join_room', {'room': roomId, 'username': username});
+    _socket!.emit('join_room', {'room': roomId, 'username': username});
   }
 
   void leaveRoom(String roomId) {
-    _socket.emit('leave_room', {'room': roomId});
+    _socket!.emit('leave_room', {'room': roomId});
     currentRoom = null;
   }
 
-  void sendMessage(String roomId, String text, {String? mediaUrl}) {
-    _socket.emit('message', jsonEncode({
+  /// Sends a chat message — queues locally if offline.
+  Future<void> sendMessage(String roomId, String text, {String? mediaUrl}) async {
+    final payload = <String, dynamic>{
       'room': roomId,
       'text': text,
       'media_url': mediaUrl,
-    }));
+    };
+    if (!_isOnline || isOfflineMode) {
+      final prefs = await SharedPreferences.getInstance();
+      final pending = prefs.getStringList('pending_messages') ?? [];
+      pending.add(jsonEncode(payload));
+      if (pending.length > 50) pending.removeAt(0);
+      await prefs.setStringList('pending_messages', pending);
+      return;
+    }
+    _socket!.emit('message', jsonEncode(payload));
   }
 
-  void sendWidgetNote(String toUserId, String message) =>
-      _socket.emit('widget_write', {'to': toUserId, 'body': message});
+  /// Sends a widget note — always stores locally AND tries server.
+  Future<void> sendWidgetNote(String toUserId, String message) async {
+    // Always persist to local shared prefs so widget works immediately
+    final entry = NoteEntry(
+      sender: _username,
+      body: message,
+      timestamp: DateTime.now(),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    final sentLog = prefs.getStringList('widget_notes_sent') ?? [];
+    sentLog.add(jsonEncode(entry.toJson()));
+    if (sentLog.length > 20) sentLog.removeAt(0);
+    await prefs.setStringList('widget_notes_sent', sentLog);
+    await prefs.setString('last_note', message);
+    await prefs.setString('last_note_ts', _formatTs(entry.timestamp));
+
+    if (_isOnline && !isOfflineMode) {
+      _socket!.emit('widget_write', {'to': toUserId, 'body': message});
+    } else {
+      // Queue for later
+      final pending = prefs.getStringList('pending_notes') ?? [];
+      pending.add(jsonEncode({'to': toUserId, 'body': message}));
+      if (pending.length > 20) pending.removeAt(0);
+      await prefs.setStringList('pending_notes', pending);
+    }
+  }
 
   void gameAction(String roomId, Map<String, dynamic> payload) =>
-      _socket.emit('game_action', {'room': roomId, ...payload});
+      _socket!.emit('game_action', {'room': roomId, ...payload});
 
   void acceptFriend(String friendUsername) =>
-      _socket.emit('accept_friend', {'from': friendUsername});
+      _socket!.emit('accept_friend', {'from': friendUsername});
 
   @override
   void dispose() {
     _events.close();
     _searchResults.close();
     _rooms.close();
-    _socket.dispose();
+    _socket?.dispose();
     super.dispose();
   }
 }

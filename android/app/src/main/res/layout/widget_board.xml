@@ -5,16 +5,16 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="10dp"
-    android:backgroundTint="?attr/colorSurface">
+    android:background="#1a1a2e">
 
     <!-- Header -->
     <TextView
         android:id="@+id/widgetTitle"
-        style="@style/TextAppearance.Material3.LabelLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="WidgetBoard"
-        android:textColor="?attr/colorPrimary"
+        android:textColor="#ffffff"
+        android:textSize="16sp"
         android:textStyle="bold" />
 
     <!-- Divider -->
@@ -23,75 +23,66 @@
         android:layout_height="1dp"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
-        android:background="?attr/colorOutlineVariant" />
+        android:background="#40ffffff" />
 
-    <!-- Note entries (populated at runtime) -->
-    <LinearLayout
-        android:id="@+id/widgetNotesContainer"
+    <!-- Note rows -->
+    <TextView
+        android:id="@+id/noteRow0"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:textColor="#ffffff"
+        android:textSize="12sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
-        <!-- 5 note rows, each with sender + message line -->
-        <TextView
-            android:id="@+id/noteRow0"
-            style="@style/TextAppearance.Material3.BodySmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="?attr/colorOnSurface"
-            android:maxLines="2"
-            android:ellipsize="end" />
+    <TextView
+        android:id="@+id/noteRow1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="#bbbbbb"
+        android:textSize="12sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/noteRow1"
-            style="@style/TextAppearance.Material3.BodySmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="2"
-            android:ellipsize="end" />
+    <TextView
+        android:id="@+id/noteRow2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="#bbbbbb"
+        android:textSize="12sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/noteRow2"
-            style="@style/TextAppearance.Material3.BodySmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="2"
-            android:ellipsize="end" />
+    <TextView
+        android:id="@+id/noteRow3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="#bbbbbb"
+        android:textSize="12sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/noteRow3"
-            style="@style/TextAppearance.Material3.BodySmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="2"
-            android:ellipsize="end" />
+    <TextView
+        android:id="@+id/noteRow4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="#bbbbbb"
+        android:textSize="12sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/noteRow4"
-            style="@style/TextAppearance.Material3.BodySmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="2"
-            android:ellipsize="end" />
-
-    </LinearLayout>
-
-    <!-- Footer / timestamp -->
+    <!-- Footer -->
     <TextView
         android:id="@+id/widgetUpdated"
-        style="@style/TextAppearance.Material3.BodySmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:text="waiting for notes…"
-        android:textColor="?attr/colorOutline" />
+        android:textColor="#88ffffff"
+        android:textSize="10sp" />
 
 </LinearLayout>

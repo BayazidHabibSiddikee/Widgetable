@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:widgetboard/core/services/score_service.dart';
@@ -15,15 +16,32 @@ class _TtcGameState extends State<TtcGame> {
   static const room = 'ttc-room';
   Player _current = Player.x;
   final List<Player> _cells = List.filled(9, Player.none);
+  bool _isVsAI = true;
+  bool _aiThinking = false;
 
   void _tap(int idx) {
-    if (_cells[idx] != Player.none) return;
+    if (_cells[idx] != Player.none || _aiThinking) return;
+    _makeMove(idx, Player.x);
+    if (_isVsAI && !gameOver()) {
+      setState(() => _aiThinking = true);
+      Timer(const Duration(milliseconds: 500), () {
+        if (!mounted) return;
+        final aiMove = _bestMove();
+        if (aiMove != -1) {
+          _makeMove(aiMove, Player.o);
+        }
+        setState(() => _aiThinking = false);
+      });
+    }
+  }
+
+  void _makeMove(int idx, Player player) {
     setState(() {
-      _cells[idx] = _current;
+      _cells[idx] = player;
       context.read<WebSocketService>().gameAction(room, {
         'action': 'move',
         'index': idx,
-        'player': _current == Player.x ? 'x' : 'o',
+        'player': player == Player.x ? 'x' : 'o',
       });
     });
     final win = _checkWin(_cells);
@@ -34,7 +52,59 @@ class _TtcGameState extends State<TtcGame> {
     } else if (win == null && !_cells.contains(Player.none)) {
       _end('Draw!');
     }
-    _current = _current == Player.x ? Player.o : Player.x;
+    if (!gameOver()) {
+      setState(() => _current = _current == Player.x ? Player.o : Player.x);
+    }
+  }
+
+  bool gameOver() {
+    return _checkWin(_cells) != null || !_cells.contains(Player.none);
+  }
+
+  int _bestMove() {
+    // Minimax for O (AI)
+    int bestScore = -999;
+    int bestIdx = -1;
+    for (int i = 0; i < 9; i++) {
+      if (_cells[i] == Player.none) {
+        _cells[i] = Player.o;
+        int score = _minimax(_cells, 0, false);
+        _cells[i] = Player.none;
+        if (score > bestScore) {
+          bestScore = score;
+          bestIdx = i;
+        }
+      }
+    }
+    return bestIdx;
+  }
+
+  int _minimax(List<Player> board, int depth, bool isMaximizing) {
+    final win = _checkWin(board);
+    if (win == Player.o) return 10 - depth;
+    if (win == Player.x) return depth - 10;
+    if (!board.contains(Player.none)) return 0;
+    if (isMaximizing) {
+      int best = -999;
+      for (int i = 0; i < 9; i++) {
+        if (board[i] == Player.none) {
+          board[i] = Player.o;
+          best = best > _minimax(board, depth + 1, false) ? best : _minimax(board, depth + 1, false);
+          board[i] = Player.none;
+        }
+      }
+      return best;
+    } else {
+      int best = 999;
+      for (int i = 0; i < 9; i++) {
+        if (board[i] == Player.none) {
+          board[i] = Player.x;
+          best = best < _minimax(board, depth + 1, true) ? best : _minimax(board, depth + 1, true);
+          board[i] = Player.none;
+        }
+      }
+      return best;
+    }
   }
 
   Player? _checkWin(List<Player> board) {
@@ -59,6 +129,7 @@ class _TtcGameState extends State<TtcGame> {
             setState(() {
               _cells.fillRange(0, 9, Player.none);
               _current = Player.x;
+              _aiThinking = false;
             });
           }, child: const Text('Play again'))],
         ),
@@ -74,12 +145,34 @@ class _TtcGameState extends State<TtcGame> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Tic-Tac-Toe')),
+        appBar: AppBar(
+          title: const Text('Tic-Tac-Toe'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(children: [
+                const Text('vs AI', style: TextStyle(fontSize: 12)),
+                Switch(
+                  value: _isVsAI,
+                  onChanged: (_) {
+                    setState(() {
+                      _isVsAI = !_isVsAI;
+                      _cells.fillRange(0, 9, Player.none);
+                      _current = Player.x;
+                    });
+                  },
+                ),
+              ]),
+            ),
+          ],
+        ),
         body: Column(children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Current turn: ${_current == Player.x ? 'X' : 'O'}',
-                style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              _aiThinking ? 'AI is thinking...' : 'Your turn: ${_current == Player.x ? 'X' : 'O'}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           Expanded(
             child: GridView.builder(
@@ -95,19 +188,21 @@ class _TtcGameState extends State<TtcGame> {
                 child: Card(
                   elevation: 3,
                   child: Center(
-                    child: Icon(
-                      switch (_cells[i]) {
-                        Player.x => Icons.close,
-                        Player.o => Icons.circle,
-                        Player.none => null,
-                      },
-                      size: 42,
-                      color: switch (_cells[i]) {
-                        Player.x => Colors.red,
-                        Player.o => Colors.blue,
-                        Player.none => null,
-                      },
-                    ),
+                    child: _cells[i] == Player.none && _aiThinking
+                        ? const SizedBox(width: 42, height: 42, child: CircularProgressIndicator(strokeWidth: 3))
+                        : Icon(
+                            switch (_cells[i]) {
+                              Player.x => Icons.close,
+                              Player.o => Icons.circle,
+                              Player.none => null,
+                            },
+                            size: 42,
+                            color: switch (_cells[i]) {
+                              Player.x => Colors.red,
+                              Player.o => Colors.blue,
+                              Player.none => null,
+                            },
+                          ),
                   ),
                 ),
               ),

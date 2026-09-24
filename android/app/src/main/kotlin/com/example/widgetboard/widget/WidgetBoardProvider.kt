@@ -1,21 +1,22 @@
-package com.widgetboard.widget
+package com.example.widgetboard.widget
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
-import org.json.JSONObject
-import com.widgetboard.R
+import com.example.widgetboard.R
 
 /**
  * AppWidgetProvider that displays the last 5 shared notes from friends.
  *
  * Notes are stored in SharedPreferences under the key "widget_notes_json".
  * Each entry is a JSON object: { "sender": "...", "body": "...", "timestamp": "..." }
- *
- * The Flutter side pushes updates by writing this key → onReceive() picks them up.
  */
 class WidgetBoardProvider : AppWidgetProvider() {
 
@@ -82,10 +83,10 @@ class WidgetBoardProvider : AppWidgetProvider() {
             }
             if (i < noteList.size) {
                 views.setTextViewText(tvId, noteList[i].formatForWidget())
-                views.setViewVisibility(tvId, android.view.View.VISIBLE)
+                views.setViewVisibility(tvId, View.VISIBLE)
             } else {
                 views.setTextViewText(tvId, "")
-                views.setViewVisibility(tvId, android.view.View.GONE)
+                views.setViewVisibility(tvId, View.GONE)
             }
         }
 
@@ -96,28 +97,20 @@ class WidgetBoardProvider : AppWidgetProvider() {
         // Tap to open app
         try {
             val pi = context.packageManager.getPackageInfo(context.packageName, 0)
+            val cls = pi.applicationInfo?.className ?: "${context.packageName}.MainActivity"
             val pending = PendingIntent.getActivity(
                 context, 0,
-                Intent(context, Class.forName(pi.applicationInfo.className)),
+                Intent(context, Class.forName(cls)),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             views.setOnClickPendingIntent(R.id.widgetRoot, pending)
-        } catch (e: Exception) {
-            // Ignore – widget still renders
-        }
+        } catch (_: Exception) {}
 
         appWidgetManager.updateAppWidget(widgetId, views)
     }
 
-    /**
-     * Parse notes JSON array. Handles both:
-     * - Old format: single string "miss u 💛" (widget_note key)
-     * - New format: JSON array [{sender, body, timestamp}, ...]
-     */
     private fun parseNotes(jsonString: String): List<NoteLine> {
         val result = mutableListOf<NoteLine>()
-
-        // Try new format first (JSON array)
         try {
             val arr = JSONArray(jsonString)
             for (i in 0 until arr.length()) {
@@ -127,15 +120,9 @@ class WidgetBoardProvider : AppWidgetProvider() {
                 result.add(NoteLine(sender = sender, body = body))
             }
             return result
-        } catch (_: Exception) {
-            // Fall through to legacy format
-        }
-
-        // Legacy single-note format
+        } catch (_: Exception) {}
         val body = jsonString.trim()
-        if (body.isNotEmpty()) {
-            result.add(NoteLine(sender = "friend", body = body))
-        }
+        if (body.isNotEmpty()) result.add(NoteLine(sender = "friend", body = body))
         return result
     }
 

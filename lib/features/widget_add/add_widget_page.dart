@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:widgetboard/core/models/note_entry.dart';
 import 'package:widgetboard/core/services/websocket_service.dart';
 import 'package:widgetboard/core/widgets/premium_gate.dart';
-import 'package:clipboard/clipboard.dart';
+import 'package:flutter/services.dart';
 
 /// Add home-screen widget notes. Notes are stored per-user in SharedPreferences
 /// under the key `widget_notes:<username>` so that when you open the app on your
@@ -215,9 +215,9 @@ Tips:
 • Your recent received notes are shown below.
 ''';
 
-    FlutterClipboard.copy(instructions);
+    Clipboard.setData(ClipboardData(text: instructions));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Instructions copied to clipboard')),
+      SnackBar(content: Text('Instructions copied to clipboard')),
     );
   }
 
