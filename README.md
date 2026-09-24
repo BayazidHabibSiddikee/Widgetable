@@ -59,8 +59,10 @@ lib/
  ├── app.dart                  # MaterialApp theme + entry
  ├── main.dart                 # MultiProvider (WS + Score)
  ├── features/                 # UI screens
- └── core/                     # services & theme
-android/.../kotlin/WidgetBoardProvider.kt  # home-screen widget
+ ├── core/                     # services & theme
+ ├── platform/                 # placeholder for platform channels
+ └── widgets/                  # shared reusable pieces
+android/.../kotlin/.../WidgetBoardProvider.kt  # home-screen widget
 test/widget_test.dart         # smoke test
 ```
 

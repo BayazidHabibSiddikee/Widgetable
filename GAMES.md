@@ -39,7 +39,7 @@ ws.gameAction('ttc-room', { 'action': 'move', 'index': 4, 'player': 'x' });
 
 ### Multiplayer protocol
 ```dart
-ws.gameAction('racing-room', { 'action': 'move', 'x': -1.0..1.0 });
+ws.gameAction('racing-room', { 'action': 'move', 'x': normalizedPosition });  // x: double in [-1.0, 1.0]
 ```
 
 ### Score

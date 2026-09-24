@@ -103,7 +103,7 @@ io.on('connection', (socket) => {
 
   socket.on('message', (payload) => {
     const room = payload.room;
-    socket.to(room).emit('incoming_message', JSON.parse(payload));
+    socket.to(room).emit('incoming_message', payload);
   });
 
   socket.on('game_action', ({ room, ...payload }) => {

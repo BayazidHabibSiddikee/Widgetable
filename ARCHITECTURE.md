@@ -8,24 +8,22 @@ mini-games. Communication happens through a single server-side WebSocket
 ## High-level data flow
 
 ```
-+----------+              +-------------------+              +----------+
-|  Phone A |  WS (Socket.IO)  |                |  WS  |  Phone B |
-|          |  --------       |  Signal Server   |     -------- |          |
-|  Flutter |  register,      |  (Node.js)       |  |  register,
-|  client  |  search,        |                  |  |  search,
-|          |  add_friend,    |  - join/leave    |  |  add_friend,
-|          |  create_room,   |    rooms         |  |  create_room,
-|          |  game_action,   |  - relay events   |  |  game_action,
-|          |  message        |  - bridge         |  |  message
-+----------+  widget_write    |    widget_write   |  widget_write +----------+
-                              +-------------------+
-                                    |
-                                    | SharedPrefs (widget notes)
-                                    v
-                            +-----------------+
-                            | AppWidget       |
-                            | (Android only)  |
-                            +-----------------+
++-------------+  WS (Socket.IO)  +-------------------+  WS (Socket.IO)  +-------------+
+|   Phone A   |  ------------->  |  Signal Server    |  ------------->  |   Phone B   |
+|  Flutter    |  register,      |  (Node.js)        |  register,      |  Flutter    |
+|  client     |  search,        |  - join/leave     |  search,        |  client     |
+|            |  add_friend,    |    rooms          |  add_friend,    |            |
+|            |  create_room,   |  - relay events   |  create_room,   |            |
+|            |  game_action,   |  - bridge          |  game_action,   |            |
+|            |  message,      |                    |  message,      |            |
++-------------+  widget_write  +-------------------+  widget_write    +-------------+
+                               |
+                               | SharedPrefs (widget notes)
+                               v
+                         +-------------------+
+                         |   AppWidget       |
+                         |   (Android only)  |
+                         +-------------------+
 ```
 
 ## Layers

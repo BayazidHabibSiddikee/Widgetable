@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:widgetboard/core/services/websocket_service.dart';
+import 'package:widgetboard/core/widgets/premium_gate.dart';
 
 /// Add home-screen widget + compose notes that friends see on their AppWidget.
+/// Some premium note templates are gated behind a paywall.
 class AddWidgetPage extends StatefulWidget {
   const AddWidgetPage({super.key});
   @override
@@ -24,6 +26,14 @@ class _AddWidgetPageState extends State<AddWidgetPage> {
     'have a great day 🌟',
     'miss our talks 😢',
     'you\'ve got this 💪',
+  ];
+
+  static const _premiumTemplates = [
+    'I\'m yours today 💍',
+    'call me maybe 📞',
+    'send nudes? 😜',
+    'u up? midnight thoughts 🌙',
+    '❤️ u more than wifi',
   ];
 
   Future<void> _sendNote() async {
@@ -108,17 +118,48 @@ Tips:
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: _templates.map((t) => ChoiceChip(
-                        label: Text(
-                          t,
-                          style: TextStyle(
-                            color: _selectedTemplate == t ? Colors.white : null,
+                children: _templates
+                    .map((t) => ChoiceChip(
+                          label: Text(
+                            t,
+                            style: TextStyle(
+                              color: _selectedTemplate == t ? Colors.white : null,
+                            ),
                           ),
-                        ),
-                        selected: _selectedTemplate == t,
-                        onSelected: (_) => setState(() => _selectedTemplate = t),
-                      ))
+                          selected: _selectedTemplate == t,
+                          onSelected: (_) => setState(() => _selectedTemplate = t),
+                        ))
                     .toList(),
+              ),
+              const SizedBox(height: 16),
+              // Premium-only templates
+              PremiumGate(
+                feature: 'premium templates',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Premium templates',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: _premiumTemplates
+                          .map((t) => ChoiceChip(
+                                label: Text(
+                                  t,
+                                  style: TextStyle(
+                                    color: _selectedTemplate == t ? Colors.white : Colors.deepPurple,
+                                  ),
+                                ),
+                                selected: _selectedTemplate == t,
+                                onSelected: (_) => setState(() => _selectedTemplate = t),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
