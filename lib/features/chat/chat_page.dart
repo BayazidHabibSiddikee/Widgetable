@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -99,7 +99,11 @@ class _ChatsPageState extends State<ChatsPage> {
   @override
   void dispose() {
     _text.dispose();
-    context.read<WebSocketService>().removeListener(_onWsChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<WebSocketService>().removeListener(_onWsChange);
+      }
+    });
     super.dispose();
   }
 
@@ -145,17 +149,16 @@ class _ChatsPageState extends State<ChatsPage> {
                     final isMine = m.sender == 'me';
                     return Align(
                       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                      child: m.type == ChatType.image
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
-                              child: CachedNetworkImage(
-                                imageUrl: m.mediaUrl ?? '',
-                                width: 160,
-                                placeholder: (_, __) =>
-                                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator()),
-                                errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
-                              ),
-                            )
+                       child: m.type == ChatType.image
+                           ? ClipRRect(
+                               borderRadius: BorderRadius.circular(14),
+                               child: Image.file(
+                                 File(m.mediaUrl ?? ''),
+                                 width: 160,
+                                 fit: BoxFit.cover,
+                                 errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                               ),
+                             )
                           : m.type == ChatType.audio
                               ? _AudioBubble(path: m.audioPath ?? '', isMine: isMine)
                               : Container(

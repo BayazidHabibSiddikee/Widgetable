@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as socket_io;
+import 'package:widgetboard/core/models/note_entry.dart';
 
 /// WebSocket / Socket.IO signaling service for WidgetBoard.
 ///
@@ -69,7 +71,7 @@ class WebSocketService with ChangeNotifier {
     _socket.on('room_joined', _forward);
     _socket.on('user_joined', _forward);
     _socket.on('incoming_message', _forward);
-    _socket.on('widget_write', _forward);
+    _socket.on('widget_write', _onWidgetWrite);
     _socket.on('friends_list', (data) {
       if (data is List) {
         _friends.clear();
@@ -91,6 +93,43 @@ class WebSocketService with ChangeNotifier {
     final m = data as Map<String, dynamic>;
     _rooms.add(m);
     _events.add(m);
+  }
+
+  /// When we receive a widget_write, append it to our local shared prefs so
+  /// the Android AppWidget can display it immediately.
+  Future<void> _onWidgetWrite(dynamic data) async {
+    final map = data as Map<String, dynamic>;
+    final sender = map['from'] as String? ?? 'friend';
+    final body = map['body'] as String? ?? '';
+    if (body.isEmpty) return;
+
+    final entry = NoteEntry(
+      sender: sender,
+      body: body,
+      timestamp: DateTime.now(),
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    // Load existing received notes
+    final raw = prefs.getString('widget_notes_json') ?? '[]';
+    final existing = NoteEntry.fromJsonList(raw);
+    // Prepend newest
+    existing.insert(0, entry);
+    if (existing.length > 10) existing.removeLast();
+    await prefs.setString('widget_notes_json', NoteEntry.toJsonList(existing));
+    await prefs.setString(
+      'last_note_ts',
+      _formatTs(entry.timestamp),
+    );
+    notifyListeners();
+  }
+
+  static String _formatTs(DateTime dt) {
+    final h = dt.hour;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final ampm = h >= 12 ? 'PM' : 'AM';
+    final h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h);
+    return '$h12:$m $ampm';
   }
 
   void setUsername(String name) {

@@ -3,36 +3,95 @@
     android:id="@+id/widgetRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:backgroundTint="?attr/colorSurface"
-    android:padding="12dp"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:backgroundTint="?attr/colorSurface">
 
+    <!-- Header -->
     <TextView
         android:id="@+id/widgetTitle"
-        style="@style/TextAppearance.Material3.BodyLarge"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="WidgetBoard"
-    android:textColor="?attr/colorOnBackground" />
+        style="@style/TextAppearance.Material3.LabelLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="WidgetBoard"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/widgetMessage"
-        style="@style/TextAppearance.Material3.BodyMedium"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="4dp"
-    android:text='miss u 💛'
-    android:textColor="?attr/colorOnSurfaceVariant"
-    android:maxLines="3"
-    android:ellipsize="end" />
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:background="?attr/colorOutlineVariant" />
 
+    <!-- Note entries (populated at runtime) -->
+    <LinearLayout
+        android:id="@+id/widgetNotesContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 5 note rows, each with sender + message line -->
+        <TextView
+            android:id="@+id/noteRow0"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/noteRow1"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/noteRow2"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/noteRow3"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/noteRow4"
+            style="@style/TextAppearance.Material3.BodySmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+    </LinearLayout>
+
+    <!-- Footer / timestamp -->
     <TextView
         android:id="@+id/widgetUpdated"
         style="@style/TextAppearance.Material3.BodySmall"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="6dp"
-    android:text="just now"
-    android:textColor="?attr/colorOutline" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="waiting for notes…"
+        android:textColor="?attr/colorOutline" />
 
 </LinearLayout>
