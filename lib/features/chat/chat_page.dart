@@ -84,7 +84,17 @@ class _ChatsPageState extends State<ChatsPage> {
       body: Column(children: [
         Expanded(
           child: _messages.isEmpty
-              ? const Center(child: Text('No messages yet — say hi!'))
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.message_outlined, size: 56, color: cs.surfaceContainerHighest),
+                      const SizedBox(height: 8),
+                      Text('No messages yet', style: TextStyle(color: cs.onSurfaceVariant)),
+                      Text('Say hi to start the conversation!', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                    ],
+                  ),
+                )
               : ListView.builder(
                   reverse: true,
                   padding: const EdgeInsets.all(12),

@@ -40,7 +40,7 @@ class PremiumGate extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: LinearGradient(
-                colors: [cs.surfaceContainerHighest, cs.surface.withOpacity(0.8)],
+                colors: [cs.surfaceContainerHighest, cs.surface.withValues(alpha: 0.8)],
               ),
             ),
             child: Column(

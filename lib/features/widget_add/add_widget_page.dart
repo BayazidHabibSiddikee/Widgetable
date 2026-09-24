@@ -10,8 +10,48 @@ import 'package:widgetboard/core/widgets/premium_gate.dart';
 /// Some premium note templates are gated behind a paywall.
 class AddWidgetPage extends StatefulWidget {
   const AddWidgetPage({super.key});
+
   @override
   State<AddWidgetPage> createState() => _AddWidgetPageState();
+}
+
+class _LastSentNote extends StatelessWidget {
+  const _LastSentNote({required this.onPick});
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return FutureBuilder<String?>(
+      future: () async {
+        final prefs = await SharedPreferences.getInstance();
+        return prefs.getString('last_note');
+      }(),
+      builder: (_, snap) {
+        final note = snap.data;
+        if (note == null || note.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Recent note', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: () => onPick(note),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(note, style: TextStyle(color: cs.onSurfaceVariant)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _AddWidgetPageState extends State<AddWidgetPage> {
@@ -162,6 +202,8 @@ Tips:
                 ),
               ),
               const SizedBox(height: 20),
+              _LastSentNote(onPick: (note) => setState(() => _note.text = note)),
+              const SizedBox(height: 16),
               const Text(
                 'Custom note (optional)',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),

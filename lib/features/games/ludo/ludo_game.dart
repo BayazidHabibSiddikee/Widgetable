@@ -118,7 +118,7 @@ class _LudoGameState extends State<LudoGame>
         height: 90,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: playerColors[idx].withOpacity(0.25),
+          color: playerColors[idx].withValues(alpha: 0.25),
           border: Border.all(color: playerColors[idx], width: 3),
           borderRadius: BorderRadius.circular(8),
         ),
