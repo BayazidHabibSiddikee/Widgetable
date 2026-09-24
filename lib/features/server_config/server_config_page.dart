@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:widgetboard/core/services/websocket_service.dart';
-import 'package:widgetboard/features/friends/friends_page.dart';
+import 'package:widgetboard/features/home/home_page.dart';
 
 /// Entry point: enter server URL + username, then navigates to FriendsPage.
 class ServerConfigPage extends StatefulWidget {
@@ -50,7 +50,7 @@ class _ServerConfigPageState extends State<ServerConfigPage> {
     setState(() => _loading = false);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const FriendsPage()),
+      MaterialPageRoute(builder: (_) => const HomePage()),
     );
   }
 

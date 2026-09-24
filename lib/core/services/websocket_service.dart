@@ -88,8 +88,9 @@ class WebSocketService with ChangeNotifier {
   }
 
   void _handleRoomCreated(dynamic data) {
-    _rooms.add(data as Map<String, dynamic>);
-    _events.add(data as Map<String, dynamic>);
+    final m = data as Map<String, dynamic>;
+    _rooms.add(m);
+    _events.add(m);
   }
 
   void setUsername(String name) {

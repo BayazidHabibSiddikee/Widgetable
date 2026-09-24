@@ -6,7 +6,6 @@ import 'package:widgetboard/features/friends/friends_page.dart';
 import 'package:widgetboard/features/games/games_home.dart';
 import 'package:widgetboard/features/media/media_page.dart';
 import 'package:widgetboard/features/widget_add/add_widget_page.dart';
-import 'package:widgetboard/features/widget_write/widget_write_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

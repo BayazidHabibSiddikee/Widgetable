@@ -35,6 +35,35 @@ class _ChatsPageState extends State<ChatsPage> {
   final _text = TextEditingController();
   final List<ChatMessage> _messages = [];
   static const roomId = 'demo-room';
+  bool _connected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final ws = context.read<WebSocketService>();
+    ws.onEvent.listen((event) {
+      if (!mounted) return;
+      final text = event['text'] as String? ?? '';
+      final mediaUrl = event['media_url'] as String?;
+      final sender = event['sender'] as String? ?? 'friend';
+      setState(() {
+        _messages.add(ChatMessage(
+          id: DateTime.now().toIso8601String(),
+          sender: sender,
+          text: text,
+          mediaUrl: mediaUrl,
+          type: mediaUrl != null && mediaUrl.isNotEmpty ? ChatType.image : ChatType.text,
+        ));
+      });
+    });
+    ws.addListener(_onWsChange);
+  }
+
+  void _onWsChange() {
+    if (context.mounted && _connected != context.read<WebSocketService>().isConnected) {
+      setState(() => _connected = context.read<WebSocketService>().isConnected);
+    }
+  }
 
   void _send(String roomId) {
     final text = _text.text.trim();
@@ -70,6 +99,7 @@ class _ChatsPageState extends State<ChatsPage> {
   @override
   void dispose() {
     _text.dispose();
+    context.read<WebSocketService>().removeListener(_onWsChange);
     super.dispose();
   }
 
@@ -78,7 +108,18 @@ class _ChatsPageState extends State<ChatsPage> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chats'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Chats'),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.circle,
+              size: 10,
+              color: _connected ? Colors.green : Colors.red,
+            ),
+          ],
+        ),
         centerTitle: false,
       ),
       body: Column(children: [

@@ -83,6 +83,10 @@ class _AddWidgetPageState extends State<AddWidgetPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('last_note', body);
     await prefs.setString(
+      'widget_note',
+      body,
+    );
+    await prefs.setString(
       'last_note_ts',
       DateFormat.yMMMd().add_jm().format(DateTime.now()),
     );
