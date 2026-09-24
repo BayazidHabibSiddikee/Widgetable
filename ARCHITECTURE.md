@@ -95,5 +95,44 @@ android/
 | Server URL        | `SharedPreferences` key `server_url` | `ServerConfigPage`        |
 | Username          | `SharedPreferences` key `username` | `ServerConfigPage` |
 | High scores       | `SharedPreferences` key `scores_v1` | `ScoreService`     |
-| Last widget note  | `SharedPreferences` key `last_note` | `WidgetBoardProvider.kt` |
+| Widget notes (sent) | `SharedPreferences` key `widget_notes_sent` | `AddWidgetPage` |
+| Widget notes (received) | `SharedPreferences` key `widget_notes_json` | `WebSocketService`, `WidgetBoardProvider.kt` |
+| Last widget timestamp | `SharedPreferences` key `last_note_ts` | `WidgetBoardProvider.kt` |
 | Incoming messages | (in-memory list, not yet persisted) | `ChatsPage`          |
+
+## Multi-User Widget Sharing
+
+The home-screen widget is a **shared canvas** — every friend who sends you a note
+appears on your widget alongside their own line, and vice versa.
+
+### Data flow for shared notes
+
+```
+Friend A sends "miss u" → Socket.IO → Friend B's app receives widget_write event
+                                    ↓
+                            WebSocketService._onWidgetWrite()
+                                    ↓
+                            Appends NoteEntry to SharedPreferences
+                            key "widget_notes_json" (JSON array)
+                                    ↓
+                            Android AppWidget onUpdate/onReceive reads
+                            "widget_notes_json" → renders up to 5 lines
+```
+
+### Android widget rendering
+
+`WidgetBoardProvider.kt` reads the JSON array from SharedPreferences and renders
+up to 5 `RemoteViews` text rows (`noteRow0`–`noteRow4`). Each row shows:
+
+```
+<sender> — <body truncated at 40 chars>
+```
+
+A compact footer shows the last-update timestamp. Tapping the widget opens the
+app via a `PendingIntent`.
+
+### NoteEntry model
+
+Located in `lib/core/models/note_entry.dart`. Fields: `sender`, `body`, `timestamp`.
+Provides `formatForWidget()` for the compact display line and JSON serialize/deserialize
+helpers for persistence.
